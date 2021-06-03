@@ -15,7 +15,7 @@ int segG = 10;
 #define TOPICO_PUBLISH   "MQTTFlopRecebe"    //tópico MQTT de envio de informações para Broker
 
 // WIFI
-const char* SSID = "matheusgancedo5g";
+const char* SSID = "mateusgancedo5g";
 const char* PASSWORD = "gancedo152018";
 
 // MQTT
@@ -96,7 +96,7 @@ void reconnectMQTT()
         Serial.println(BROKER_MQTT);
         if (MQTT.connect(ID_MQTT)) 
         {
-            Serial.println("Conectado ao MQTT");
+            Serial.println("Conectado ao topico de SUBSCRIBE do MQTT");
             MQTT.subscribe(TOPICO_SUBSCRIBE); 
         } 
         else
@@ -143,7 +143,7 @@ void EnviaEstadoOutputMQTT(void)
     if (EstadoSaida == '1')
       MQTT.publish(TOPICO_PUBLISH, "L");
  
-    Serial.println("Estado da saida D0 enviado ao broker!");
+    Serial.println("Estado da saida enviado ao broker!");
     delay(1000);
 }
  
