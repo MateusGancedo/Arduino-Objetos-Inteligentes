@@ -5,7 +5,33 @@ int segB = 13;
 int segA = 12;
 int segF = 11;
 int segG = 10;
+
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
+#define ID_MQTT  "GancedoAut"
  
+#define TOPICO_SUBSCRIBE "MQTTFlopEnvia"     //tópico MQTT de escuta
+#define TOPICO_PUBLISH   "MQTTFlopRecebe"    //tópico MQTT de envio de informações para Broker
+
+// WIFI
+const char* SSID = "matheusgancedo5g";
+const char* PASSWORD = "gancedo152018";
+
+// MQTT
+const char* BROKER_MQTT = "iot.eclipse.org";
+int BROKER_PORT = 1883;
+
+WiFiClient espClient;
+PubSubClient MQTT(espClient);
+char EstadoSaida = '0';
+
+void iniciaWifi();
+void iniciaMQTT();
+void reconectWiFi(); 
+void mqtt_callback(char* topic, byte* payload, unsigned int length);
+void VerificaConexoesWiFIEMQTT(void);
+
 int pinoTilt = 5;
  
 void setup()
@@ -18,14 +44,117 @@ void setup()
   pinMode(segF, OUTPUT);
   pinMode(segG, OUTPUT);
   pinMode(pinoTilt, INPUT);
+
+  iniciaWifi();
+  iniciaMQTT();
   
   Serial.begin(9600);
+}
+
+void iniciaWifi() 
+{
+    delay(10);
+    Serial.print("Conectando no WiFi");
+    Serial.println(SSID);
+     
+    reconectWiFi();
+}
+
+void iniciaMQTT() 
+{
+    MQTT.setServer(BROKER_MQTT, BROKER_PORT);
+    MQTT.setCallback(mqtt_callback);
+}
+
+void mqtt_callback(char* topic, byte* payload, unsigned int length) 
+{
+    String msg;
+
+    for(int i = 0; i < length; i++) 
+    {
+       char c = (char)payload[i];
+       msg += c;
+    }
+   
+    if (msg.equals("L"))
+    {
+        EstadoSaida = '1';
+    }
+
+    if (msg.equals("D"))
+    {
+        EstadoSaida = '0';
+    }
+     
+}
+
+void reconnectMQTT() 
+{
+    while (!MQTT.connected()) 
+    {
+        Serial.print("Conectando ao MQTT: ");
+        Serial.println(BROKER_MQTT);
+        if (MQTT.connect(ID_MQTT)) 
+        {
+            Serial.println("Conectado ao MQTT");
+            MQTT.subscribe(TOPICO_SUBSCRIBE); 
+        } 
+        else
+        {
+            Serial.println("Falha ao reconectar MQTT");
+            Serial.println("Tetando reconexão em 1s");
+            delay(1000);
+        }
+    }
+}
+
+void reconectWiFi() 
+{
+    if (WiFi.status() == WL_CONNECTED)
+        return;
+         
+    WiFi.begin(SSID, PASSWORD);
+     
+    while (WiFi.status() != WL_CONNECTED) 
+    {
+        delay(100);
+    }
+   
+    Serial.println();
+    Serial.print("Conectado na rede");
+    Serial.print(SSID);
+    Serial.println("IP:");
+    Serial.println(WiFi.localIP());
+}
+
+void VerificaConexoesWiFIEMQTT(void)
+{
+    if (!MQTT.connected()) 
+        reconnectMQTT();
+     
+     reconectWiFi();
+}
+
+void EnviaEstadoOutputMQTT(void)
+{
+    if (EstadoSaida == '0')
+      MQTT.publish(TOPICO_PUBLISH, "D");
+ 
+    if (EstadoSaida == '1')
+      MQTT.publish(TOPICO_PUBLISH, "L");
+ 
+    Serial.println("Estado da saida D0 enviado ao broker!");
+    delay(1000);
 }
  
 void loop()
 {  
   
-  
+  VerificaConexoesWiFIEMQTT();
+ 
+  EnviaEstadoOutputMQTT();
+
+  MQTT.loop();
   
   if(digitalRead(pinoTilt) == HIGH)
   {
@@ -44,33 +173,43 @@ int jogaDado()
   {
     case 0 :
     acende0();
+    MQTT.publish(TOPICO_PUBLISH, "0");
     break;
     case 1 :
     acende1();
+    MQTT.publish(TOPICO_PUBLISH, "1");
     break;
     case 2 :
     acende2();
+    MQTT.publish(TOPICO_PUBLISH, "2");
     break;
     case 3 :
     acende3();
+    MQTT.publish(TOPICO_PUBLISH, "3");
     break;
     case 4 :
     acende4();
+    MQTT.publish(TOPICO_PUBLISH, "4");
     break;
     case 5 :
     acende5();
+    MQTT.publish(TOPICO_PUBLISH, "5");
     break;
     case 6 :
     acende6();
+    MQTT.publish(TOPICO_PUBLISH, "6");
     break;
     case 7 :
     acende7();
+    MQTT.publish(TOPICO_PUBLISH, "7");
     break;
     case 8 :
     acende8();
+    MQTT.publish(TOPICO_PUBLISH, "8");
     break;
     case 9 :
     acende9();
+    MQTT.publish(TOPICO_PUBLISH, "9");
     break;
   }
   return numero;
